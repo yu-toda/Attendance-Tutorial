@@ -3,12 +3,14 @@ class UsersController < ApplicationController
   before_action :logged_in_user, only: [:index, :edit, :update, :destroy, :edit_basic_info, :update_basic_info]
   before_action :correct_user, only: [:edit, :update]
   before_action :admin_user, only: [:destroy, :edit_basic_info, :update_basic_info]
+  before_action :set_one_month, only: :show
 
   def index
     @users = User.paginate(page: params[:page])
   end
 
   def show
+    @worked_sum = @attendances.where.not(started_at: nil).count
   end
 
   def new
@@ -45,19 +47,13 @@ class UsersController < ApplicationController
   end
 
   def edit_basic_info
-     if @user.update_attributes(basic_info_params)
-    # 更新成功時の処理
-     else
-      # 更新失敗時の処理
-     end
-       redirect_to users_url
   end
 
   def update_basic_info
     if @user.update_attributes(basic_info_params)
-     flash[:success] = "#{@user.name}の基本情報を更新しました。"
+      flash[:success] = "#{@user.name}の基本情報を更新しました。"
     else
-     flash[:danger] = "#{@user.name}の更新は失敗しました。<br>" + @user.errors.full_messages.join("<br>")
+      flash[:danger] = "#{@user.name}の更新は失敗しました。<br>" + @user.errors.full_messages.join("<br>")
     end
     redirect_to users_url
   end
@@ -66,6 +62,10 @@ class UsersController < ApplicationController
 
     def user_params
       params.require(:user).permit(:name, :email, :department, :password, :password_confirmation)
+    end
+
+    def basic_info_params
+      params.require(:user).permit(:department, :basic_time, :work_time)
     end
 
     # beforeフィルター
@@ -92,9 +92,5 @@ class UsersController < ApplicationController
     # システム管理権限所有かどうか判定します。
     def admin_user
       redirect_to root_url unless current_user.admin?
-    end
-    
-    def basic_info_params
-      params.require(:user).permit(:department, :basic_time, :work_time)
     end
 end
